@@ -25,7 +25,7 @@
         8000,
         9000,
       ];
-      for (let index = 0; index < 5; index++) {
+      for (let index = 0; index < 50; index++) {
           values.push(Math.random() * 10000);
       }
     </script>
@@ -97,12 +97,15 @@
             return path;
       }
 
-      function barPath(value, index, maxIndex, maxValue, scale, baseY, baseX, scaleX)
+      function barPath(value, index, maxIndex, maxValue, scaleY, baseY, baseX, scaleX)
       {
-            let x = MARGIN + baseX + index / maxIndex * (scaleX);
-            let y = MARGIN + scale - value / maxValue * scale ;
+          let barWidth = scaleX / maxIndex;
+            let x = barWidth / 2+ MARGIN + baseX + index / maxIndex * (scaleX);
+            let y = MARGIN + scaleY - value / maxValue * scaleY ;
             d = ` M ${ x } ${ baseY } L ${ x } ${ y }`;
-            return commonPath(d);
+            const path = commonPath(d);
+            path.setAttribute("stroke-width", barWidth * 0.95);
+            return path;
       }
 
       function createSvgElement(tag)

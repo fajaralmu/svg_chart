@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en" prefix="og: http://ogp.me/ns#">
+  <head>
+    <meta charset="utf-8" />
+    <title>Svg Learn #1</title>
+    <style>
+      body {
+        background-color: darkolivegreen;
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      }
+
+      #svg {
+        background-color: cadetblue;
+      }
+    </style>
+    <script type="text/javascript">
+      const values = [
+        // 1000,
+        // 2000,
+        // 3000,
+        // 4000,
+        // 5000,
+        // 6000,
+        // 7000,
+        // 8000,
+        // 9000,
+      ];
+      for (let index = 0; index < 50; index++) {
+          values.push(Math.random() * 10000);
+      }
+    </script>
+  </head>
+  <body onload="loadChart()">
+    <div style="MARGIN: auto; text-align: center">
+      <h1>Svg</h1>
+      <p></p>
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        id="svg"
+        height="500"
+        width="800"
+      >
+    </svg>
+    </div>
+    <script type="text/javascript">
+      const svg = document.getElementById("svg");
+      const width = svg.getAttribute("width");
+      const height = svg.getAttribute("height");
+
+      const MARGIN = 30;
+      const baseX = MARGIN;
+      const baseY = height - MARGIN;
+      const maxX  = width - MARGIN;
+
+      function loadChart() {
+
+        // y axis
+        let axisYPath = `M ${ baseX }  ${ baseY } L ${ baseX }  ${ MARGIN }`;
+        svg.appendChild(commonPath(axisYPath));
+
+        // x axis
+        let axisXPath = `M ${ baseX } ${ baseY }  L ${ maxX } ${ baseY }`;
+        svg.appendChild(commonPath(axisXPath));
+
+        // drawBarPath();
+        drawLinePath();
+      }
+
+      function drawLinePath()
+      {
+        const maxValue = Math.max(... values);
+        console.log("Max val", maxValue);
+        
+        // draw bar charts  
+        const points = [];
+        for (let i = 0; i < values.length; i++) {
+            const value = values[i];
+            const scaleX = maxX - 2*MARGIN;
+            const scaleY = height - 3*MARGIN;
+            const point = getValuePoint(value, i, values.length, maxValue, scaleY, baseY, baseX, scaleX);
+            points.push(point);
+        }
+        let pathData = svgPathData(points, bezierCommand);
+        svg.appendChild( commonPath( pathData ) );
+      }
+      function createText(value, x, y)
+      {
+          const text = createSvgElement( "text" );
+          text.setAttribute("x", x);
+          text.setAttribute("y", y);
+          text.innerHTML = value;
+          return text;
+      }
+
+      function commonPath(d)
+      {
+            const path = createSvgElement("path");
+            path.setAttribute("d", d);
+            path.setAttribute("stroke", "#000");
+            path.setAttribute("stroke-width", "3");
+            path.setAttribute("fill", "none");
+            return path;
+      }
+
+     
+      function getValuePoint(value, index, maxIndex, maxValue, scaleY, baseY, baseX, scaleX)
+      {
+          let barWidth = scaleX / maxIndex;
+          let x = barWidth / 2+ MARGIN + baseX + index / maxIndex * (scaleX);
+          let y = MARGIN + scaleY - value / maxValue * scaleY ;
+          return [x, y];
+      }
+
+      function createSvgElement(tag)
+      {
+          return  document.createElementNS('http://www.w3.org/2000/svg',tag);
+      }
+    </script>
+    <script type="text/javascript">
+      
+  
+      // Render the svg <path> element 
+      // I:  - points (array): points coordinates
+      //     - command (function)
+      //       I:  - point (array) [x,y]: current point coordinates
+      //           - i (integer): index of 'point' in the array 'a'
+      //           - a (array): complete array of points coordinates
+      //       O:  - (string) a svg path command
+      // O:  - (string): a Svg <path> element
+      const svgPathData = (points, command) => {
+        // build the d attributes by looping over the points
+        const d = points.reduce((acc, point, i, a) => i === 0
+          ? `M ${point[0]},${point[1]}`
+          : `${acc} ${command(point, i, a)}`
+          , '');
+          return d.toString();
+       
+      }
+  
+    // Position of a control point 
+    // I:  - current (array) [x, y]: current point coordinates
+    //     - previous (array) [x, y]: previous point coordinates
+    //     - next (array) [x, y]: next point coordinates
+    //     - reverse (boolean, optional): sets the direction
+    // O:  - (array) [x,y]: a tuple of coordinatesconst 
+    controlPoint = (current, previous, next, reverse) => {  
+      // When 'current' is the first or last point of the array
+      // 'previous' or 'next' don't exist.
+      // Replace with 'current'
+      const p = previous || current
+      const n = next || current  // The smoothing ratio
+      const smoothing = 0.2  // Properties of the opposed-line
+      const o = line(p, n)  // If is end-control-point, add PI to the angle to go backward
+      const angle = o.angle + (reverse ? Math.PI : 0)
+      const length = o.length * smoothing  // The control point position is relative to the current point
+      const x = current[0] + Math.cos(angle) * length
+      const y = current[1] + Math.sin(angle) * length  
+      return [x, y];
+    }
+    // Create the bezier curve command 
+  // I:  - point (array) [x,y]: current point coordinates
+  //     - i (integer): index of 'point' in the array 'a'
+  //     - a (array): complete array of points coordinates
+  // O:  - (string) 'C x2,y2 x1,y1 x,y': SVG cubic bezier C commandconst 
+    const bezierCommand = (point, i, a) => {  // start control point
+      const [cpsX, cpsY] = controlPoint(a[i - 1], a[i - 2], point)  // end control point
+      const [cpeX, cpeY] = controlPoint(point, a[i - 1], a[i + 1], true)  
+      return `C ${cpsX},${cpsY} ${cpeX},${cpeY} ${point[0]},${point[1]}` 
+    }
+      // Properties of a line 
+      // I:  - pointA (array) [x,y]: coordinates
+      //     - pointB (array) [x,y]: coordinates
+      // O:  - (object) { length: l, angle: a }: properties of the line
+    const line = (pointA, pointB) => {
+      const lengthX = pointB[0] - pointA[0]
+      const lengthY = pointB[1] - pointA[1]  
+      return {
+        length: Math.sqrt(Math.pow(lengthX, 2) + Math.pow(lengthY, 2)),
+        angle: Math.atan2(lengthY, lengthX)
+      }
+    }
+  
+      // Svg path line command
+      // I:  - point (array) [x, y]: coordinates
+      // O:  - (string) 'L x,y': svg line command
+      const lineCommand = point => `L ${point[0]} ${point[1]}`
+  
+    </script>
+  </body>
+</html>

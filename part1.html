@@ -15,15 +15,15 @@
     </style>
     <script type="text/javascript">
       const values = [
-        1000,
-        2000,
-        3000,
-        4000,
-        5000,
-        6000,
-        7000,
-        8000,
-        9000,
+        // 1000,
+        // 2000,
+        // 3000,
+        // 4000,
+        // 5000,
+        // 6000,
+        // 7000,
+        // 8000,
+        // 9000,
       ];
       for (let index = 0; index < 50; index++) {
           values.push(Math.random() * 10000);
@@ -62,6 +62,74 @@
         let axisXPath = `M ${ baseX } ${ baseY }  L ${ maxX } ${ baseY }`;
         svg.appendChild(commonPath(axisXPath));
 
+        // drawBarPath();
+        drawLinePath();
+      }
+
+      function drawLinePath()
+      {
+        const maxValue = Math.max(... values);
+        console.log("Max val", maxValue);
+        let pathData = `M ${ baseX } ${ baseY } `;
+        // draw bar charts  
+        let prevPoint = { x : 0, y : 0 };
+        for (let i = 0; i < values.length; i++) {
+            const value = values[i];
+            const scaleX = maxX - 2*MARGIN;
+            const scaleY = height - 3*MARGIN;
+            const point = getValuePoint(value, i, values.length, maxValue, scaleY, baseY, baseX, scaleX);
+            
+        //    pathData += ` L ${ point.x } ${ point.y } `;
+
+            // drawExponentially from prevPoint to current point
+            let expAb = generateExponentialFunction( prevPoint, point );
+
+            for (let x = prevPoint.x; x < point.x; x++) {
+                let y = expAb.a * Math.pow( expAb.b, x);
+                if ( y > 0 )
+                {
+                  pathData += ` L ${ x } ${ y }   `;
+                  console.log("x: ", x, " y: ",y); 
+                }
+               
+            }
+            prevPoint = point;
+        }
+        
+        svg.appendChild( commonPath( pathData ) );
+      }
+
+      function generateExponentialFunction( point1, point2 )
+      {
+        if ( point1.x - point2.x < 0){
+          let temp = point1;
+          point1 = point2;
+          point2 = temp;
+        }
+        let x1 = point1.x;
+        let y1 = point1.y;
+        let x2 = point2.x;
+        let y2 = point2.y;
+        let a = 0 , b = 0;
+        // y1 = a * (b ^ x1)
+        // y2 = a * (b ^ x2)
+        // b^ ( x1 - x2 ) = y1 / y2;
+
+        // x ^ 25 = 2500
+        // x = 10 * ( log( 25 ) / 2500 )
+        let deltaX = x1 - x2;
+        
+        b = Math.pow( y1 / y2, 1/ deltaX );
+        a = y1 / Math.pow( b, x1 );
+        return { a:a, b:b};
+        // return function(x)
+        // {
+        //   return a * Math.pow( b, x);
+        // }
+      }
+
+      function drawBarPath()
+      {
         const maxValue = Math.max(... values);
         console.log("Max val", maxValue);
         // draw bar charts  
@@ -78,7 +146,6 @@
             svg.appendChild(text);
         }
       }
-
       function createText(value, x, y)
       {
           const text = createSvgElement( "text" );
@@ -94,18 +161,28 @@
             path.setAttribute("d", d);
             path.setAttribute("stroke", "#000");
             path.setAttribute("stroke-width", "3");
+            path.setAttribute("fill", "none");
             return path;
       }
 
       function barPath(value, index, maxIndex, maxValue, scaleY, baseY, baseX, scaleX)
       {
-          let barWidth = scaleX / maxIndex;
-            let x = barWidth / 2+ MARGIN + baseX + index / maxIndex * (scaleX);
-            let y = MARGIN + scaleY - value / maxValue * scaleY ;
+            let barWidth = scaleX / maxIndex;
+            const pt = getValuePoint(value, index, maxIndex, maxValue, scaleY, baseY, baseX, scaleX);
+            let x = pt.x;
+            let y = pt.y;
             d = ` M ${ x } ${ baseY } L ${ x } ${ y }`;
             const path = commonPath(d);
             path.setAttribute("stroke-width", barWidth * 0.95);
             return path;
+      }
+
+      function getValuePoint(value, index, maxIndex, maxValue, scaleY, baseY, baseX, scaleX)
+      {
+          let barWidth = scaleX / maxIndex;
+          let x = barWidth / 2+ MARGIN + baseX + index / maxIndex * (scaleX);
+          let y = MARGIN + scaleY - value / maxValue * scaleY ;
+          return {x :x, y: y};
       }
 
       function createSvgElement(tag)

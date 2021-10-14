@@ -62,6 +62,30 @@
         let axisXPath = `M ${ baseX } ${ baseY }  L ${ maxX } ${ baseY }`;
         svg.appendChild(commonPath(axisXPath));
 
+        // drawBarPath();
+        drawLinePath();
+      }
+
+      function drawLinePath()
+      {
+        const maxValue = Math.max(... values);
+        console.log("Max val", maxValue);
+        let pathData = `M ${ baseX } ${ baseY } `;
+        // draw bar charts  
+        for (let i = 0; i < values.length; i++) {
+            const value = values[i];
+            const scaleX = maxX - 2*MARGIN;
+            const scaleY = height - 3*MARGIN;
+            const point = getValuePoint(value, i, values.length, maxValue, scaleY, baseY, baseX, scaleX);
+            
+            pathData += ` L ${ point.x } ${ point.y } `;
+        }
+        
+        svg.appendChild(commonPath(pathData));
+      }
+
+      function drawBarPath()
+      {
         const maxValue = Math.max(... values);
         console.log("Max val", maxValue);
         // draw bar charts  
@@ -78,7 +102,6 @@
             svg.appendChild(text);
         }
       }
-
       function createText(value, x, y)
       {
           const text = createSvgElement( "text" );
@@ -94,18 +117,28 @@
             path.setAttribute("d", d);
             path.setAttribute("stroke", "#000");
             path.setAttribute("stroke-width", "3");
+            path.setAttribute("fill", "none");
             return path;
       }
 
       function barPath(value, index, maxIndex, maxValue, scaleY, baseY, baseX, scaleX)
       {
-          let barWidth = scaleX / maxIndex;
-            let x = barWidth / 2+ MARGIN + baseX + index / maxIndex * (scaleX);
-            let y = MARGIN + scaleY - value / maxValue * scaleY ;
+            let barWidth = scaleX / maxIndex;
+            const pt = getValuePoint(value, index, maxIndex, maxValue, scaleY, baseY, baseX, scaleX);
+            let x = pt.x;
+            let y = pt.y;
             d = ` M ${ x } ${ baseY } L ${ x } ${ y }`;
             const path = commonPath(d);
             path.setAttribute("stroke-width", barWidth * 0.95);
             return path;
+      }
+
+      function getValuePoint(value, index, maxIndex, maxValue, scaleY, baseY, baseX, scaleX)
+      {
+        let barWidth = scaleX / maxIndex;
+        let x = barWidth / 2+ MARGIN + baseX + index / maxIndex * (scaleX);
+        let y = MARGIN + scaleY - value / maxValue * scaleY ;
+        return {x :x, y: y};
       }
 
       function createSvgElement(tag)

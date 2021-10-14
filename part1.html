@@ -47,7 +47,7 @@
       const width = svg.getAttribute("width");
       const height = svg.getAttribute("height");
 
-      const MARGIN = 10;
+      const MARGIN = 30;
       const baseX = MARGIN;
       const baseY = height - MARGIN;
       const maxX  = width - MARGIN;
@@ -71,7 +71,7 @@
             const scaleY = height - 3*MARGIN;
             const path = barPath(value, i, values.length, maxValue, scaleY, baseY, baseX, scaleX);
             
-            let x = baseX + i / values.length * (scaleX);
+            let x = MARGIN + baseX + i / values.length * (scaleX);
             const text = createText( i + 1, x, baseY + MARGIN);
 
             svg.appendChild(path);

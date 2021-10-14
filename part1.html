@@ -72,16 +72,60 @@
         console.log("Max val", maxValue);
         let pathData = `M ${ baseX } ${ baseY } `;
         // draw bar charts  
+        let prevPoint = { x : 0, y : 0 };
         for (let i = 0; i < values.length; i++) {
             const value = values[i];
             const scaleX = maxX - 2*MARGIN;
             const scaleY = height - 3*MARGIN;
             const point = getValuePoint(value, i, values.length, maxValue, scaleY, baseY, baseX, scaleX);
             
-            pathData += ` L ${ point.x } ${ point.y } `;
+        //    pathData += ` L ${ point.x } ${ point.y } `;
+
+            // drawExponentially from prevPoint to current point
+            let expAb = generateExponentialFunction( prevPoint, point );
+
+            for (let x = prevPoint.x; x < point.x; x++) {
+                let y = expAb.a * Math.pow( expAb.b, x);
+                if ( y > 0 )
+                {
+                  pathData += ` L ${ x } ${ y }   `;
+                  console.log("x: ", x, " y: ",y); 
+                }
+               
+            }
+            prevPoint = point;
         }
         
-        svg.appendChild(commonPath(pathData));
+        svg.appendChild( commonPath( pathData ) );
+      }
+
+      function generateExponentialFunction( point1, point2 )
+      {
+        if ( point1.x - point2.x < 0){
+          let temp = point1;
+          point1 = point2;
+          point2 = temp;
+        }
+        let x1 = point1.x;
+        let y1 = point1.y;
+        let x2 = point2.x;
+        let y2 = point2.y;
+        let a = 0 , b = 0;
+        // y1 = a * (b ^ x1)
+        // y2 = a * (b ^ x2)
+        // b^ ( x1 - x2 ) = y1 / y2;
+
+        // x ^ 25 = 2500
+        // x = 10 * ( log( 25 ) / 2500 )
+        let deltaX = x1 - x2;
+        
+        b = Math.pow( y1 / y2, 1/ deltaX );
+        a = y1 / Math.pow( b, x1 );
+        return { a:a, b:b};
+        // return function(x)
+        // {
+        //   return a * Math.pow( b, x);
+        // }
       }
 
       function drawBarPath()
@@ -135,10 +179,10 @@
 
       function getValuePoint(value, index, maxIndex, maxValue, scaleY, baseY, baseX, scaleX)
       {
-        let barWidth = scaleX / maxIndex;
-        let x = barWidth / 2+ MARGIN + baseX + index / maxIndex * (scaleX);
-        let y = MARGIN + scaleY - value / maxValue * scaleY ;
-        return {x :x, y: y};
+          let barWidth = scaleX / maxIndex;
+          let x = barWidth / 2+ MARGIN + baseX + index / maxIndex * (scaleX);
+          let y = MARGIN + scaleY - value / maxValue * scaleY ;
+          return {x :x, y: y};
       }
 
       function createSvgElement(tag)
